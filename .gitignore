@@ -1,0 +1,40 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Unit test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.nyc_output/
+coverage/
+
+# Environments
+.env
+.envrc
+
+# Node
+node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+
+# Local commute walk tracking data
+data/commute_walks.json
+data/commute_walks.tmp
+
+# IDE
+.idea/
+.vscode/
