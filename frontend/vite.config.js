@@ -3,6 +3,8 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
+  // Relative base so Capacitor file:// / capacitor:// loads assets correctly
+  base: './',
   server: {
     port: 5173,
     proxy: {
@@ -11,5 +13,9 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
   },
 })

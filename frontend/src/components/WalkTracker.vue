@@ -243,6 +243,12 @@ import {
   appendCommutePoints,
   deleteCommuteWalk
 } from '../services/api.js'
+import {
+  getCurrentPosition,
+  watchPosition,
+  clearWatch,
+  isGeolocationAvailable
+} from '../services/geo.js'
 
 function haversineMeters(lat1, lon1, lat2, lon2) {
   const r = 6371000
@@ -421,29 +427,30 @@ export default {
         this.previewPoints = lastCompleted ? lastCompleted.points : []
       } catch (err) {
         console.error(err)
-        this.pageError = 'Could not load commute data. Is the API running?'
+        this.pageError = 'Could not load your walks. Pull to refresh or try again.'
       } finally {
         this.loadingHistory = false
       }
     },
-    probeLocation() {
-      if (!navigator.geolocation) {
-        this.geoMessage = 'Geolocation is not available in this browser.'
+    async probeLocation() {
+      if (!isGeolocationAvailable()) {
+        this.geoMessage = 'Geolocation is not available on this device.'
         this.geoWarn = true
         return
       }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          this.lastPosition = pos.coords
-          this.geoMessage = 'Location ready — you can start walking.'
-          this.geoWarn = false
-        },
-        (err) => {
-          this.geoMessage = this.geoErrorText(err)
-          this.geoWarn = true
-        },
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-      )
+      try {
+        const pos = await getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        })
+        this.lastPosition = pos.coords
+        this.geoMessage = 'Location ready — you can start walking.'
+        this.geoWarn = false
+      } catch (err) {
+        this.geoMessage = this.geoErrorText(err)
+        this.geoWarn = true
+      }
     },
     geoErrorText(err) {
       if (!err) return 'Unable to read location.'
@@ -453,8 +460,8 @@ export default {
       return err.message || 'Unable to read location.'
     },
     async startWalk() {
-      if (!navigator.geolocation) {
-        this.geoMessage = 'Geolocation is not available in this browser.'
+      if (!isGeolocationAvailable()) {
+        this.geoMessage = 'Geolocation is not available on this device.'
         this.geoWarn = true
         return
       }
@@ -476,7 +483,7 @@ export default {
           this.liveTick += 1
         }, 1000)
         this.flushTimer = setInterval(() => this.flushPoints(), 8000)
-        this.watchId = navigator.geolocation.watchPosition(
+        this.watchId = await watchPosition(
           (pos) => this.onPosition(pos),
           (err) => {
             this.geoMessage = this.geoErrorText(err)
@@ -484,10 +491,10 @@ export default {
           },
           { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 }
         )
-        this.geoMessage = 'Tracking… keep this tab open while you walk.'
+        this.geoMessage = 'Tracking… keep the app open while you walk.'
       } catch (err) {
         console.error(err)
-        this.geoMessage = 'Failed to start walk. Check the API connection.'
+        this.geoMessage = 'Failed to start walk. Please try again.'
         this.geoWarn = true
       } finally {
         this.starting = false
@@ -525,7 +532,7 @@ export default {
       this.stopping = true
       try {
         await this.flushPoints()
-        this.stopWatching()
+        await this.stopWatching()
         this.clearTimers()
         if (this.activeWalkId) {
           await updateCommuteWalk(this.activeWalkId, {
@@ -552,10 +559,8 @@ export default {
         this.stopping = false
       }
     },
-    stopWatching() {
-      if (this.watchId != null && navigator.geolocation) {
-        navigator.geolocation.clearWatch(this.watchId)
-      }
+    async stopWatching() {
+      await clearWatch(this.watchId)
       this.watchId = null
     },
     clearTimers() {

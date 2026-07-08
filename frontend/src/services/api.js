@@ -1,93 +1,91 @@
+/**
+ * App data API — offline-first by default (localStorage).
+ * Set VITE_USE_API=true to talk to the FastAPI backend instead.
+ */
 import axios from 'axios'
+import { localStore } from './localStore.js'
 
-const API_BASE_URL = 'http://localhost:8000/api'
+const useApi = String(import.meta.env.VITE_USE_API || '').toLowerCase() === 'true'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  }
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 8000
 })
 
-export const fetchCommuteWalks = async (limit = null) => {
+async function withFallback(remote, local) {
+  if (!useApi) return local()
   try {
-    const params = {}
-    if (limit != null) params.limit = limit
-    const response = await api.get('/commute/walks', { params })
-    return response.data
+    return await remote()
   } catch (error) {
-    console.error('Error fetching commute walks:', error)
-    throw error
+    console.warn('API unavailable, using on-device storage', error?.message || error)
+    return local()
   }
 }
 
-export const fetchCommuteStats = async () => {
-  try {
-    const response = await api.get('/commute/stats')
-    return response.data
-  } catch (error) {
-    console.error('Error fetching commute stats:', error)
-    throw error
-  }
-}
+export const fetchCommuteWalks = async (limit = null) =>
+  withFallback(
+    async () => {
+      const params = {}
+      if (limit != null) params.limit = limit
+      const response = await api.get('/commute/walks', { params })
+      return response.data
+    },
+    () => localStore.listWalks(limit)
+  )
 
-export const fetchCommuteSettings = async () => {
-  try {
-    const response = await api.get('/commute/settings')
-    return response.data
-  } catch (error) {
-    console.error('Error fetching commute settings:', error)
-    throw error
-  }
-}
+export const fetchCommuteStats = async () =>
+  withFallback(
+    async () => (await api.get('/commute/stats')).data,
+    () => localStore.getStats()
+  )
 
-export const updateCommuteSettings = async (settings) => {
-  try {
-    const response = await api.put('/commute/settings', settings)
-    return response.data
-  } catch (error) {
-    console.error('Error updating commute settings:', error)
-    throw error
-  }
-}
+export const fetchCommuteSettings = async () =>
+  withFallback(
+    async () => (await api.get('/commute/settings')).data,
+    () => localStore.getSettings()
+  )
 
-export const createCommuteWalk = async (payload) => {
-  try {
-    const response = await api.post('/commute/walks', payload)
-    return response.data
-  } catch (error) {
-    console.error('Error creating commute walk:', error)
-    throw error
-  }
-}
+export const updateCommuteSettings = async (settings) =>
+  withFallback(
+    async () => (await api.put('/commute/settings', settings)).data,
+    () => localStore.updateSettings(settings)
+  )
 
-export const updateCommuteWalk = async (walkId, payload) => {
-  try {
-    const response = await api.patch(`/commute/walks/${walkId}`, payload)
-    return response.data
-  } catch (error) {
-    console.error('Error updating commute walk:', error)
-    throw error
-  }
-}
+export const createCommuteWalk = async (payload) =>
+  withFallback(
+    async () => (await api.post('/commute/walks', payload)).data,
+    () => localStore.createWalk(payload)
+  )
 
-export const appendCommutePoints = async (walkId, points) => {
-  try {
-    const response = await api.post(`/commute/walks/${walkId}/points`, { points })
-    return response.data
-  } catch (error) {
-    console.error('Error appending commute points:', error)
-    throw error
-  }
-}
+export const updateCommuteWalk = async (walkId, payload) =>
+  withFallback(
+    async () => (await api.patch(`/commute/walks/${walkId}`, payload)).data,
+    () => {
+      const walk = localStore.updateWalk(walkId, payload)
+      if (!walk) throw new Error('Walk not found')
+      return walk
+    }
+  )
 
-export const deleteCommuteWalk = async (walkId) => {
-  try {
-    const response = await api.delete(`/commute/walks/${walkId}`)
-    return response.data
-  } catch (error) {
-    console.error('Error deleting commute walk:', error)
-    throw error
-  }
-}
+export const appendCommutePoints = async (walkId, points) =>
+  withFallback(
+    async () => (await api.post(`/commute/walks/${walkId}/points`, { points })).data,
+    () => {
+      const walk = localStore.appendPoints(walkId, points)
+      if (!walk) throw new Error('Walk not found')
+      return walk
+    }
+  )
 
+export const deleteCommuteWalk = async (walkId) =>
+  withFallback(
+    async () => (await api.delete(`/commute/walks/${walkId}`)).data,
+    () => {
+      if (!localStore.deleteWalk(walkId)) throw new Error('Walk not found')
+      return { ok: true, id: walkId }
+    }
+  )
+
+export const isOfflineFirst = !useApi

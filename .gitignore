@@ -28,6 +28,15 @@ coverage/
 node_modules/
 frontend/dist/
 
+# Capacitor native build artifacts (keep project folders)
+frontend/android/.gradle/
+frontend/android/app/build/
+frontend/android/build/
+frontend/android/local.properties
+frontend/android/captures/
+frontend/ios/App/Pods/
+frontend/ios/DerivedData/
+
 # OS
 .DS_Store
 

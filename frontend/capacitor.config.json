@@ -1,0 +1,14 @@
+{
+  "appId": "com.walktowork.app",
+  "appName": "Walk to Work",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "backgroundColor": "#0f766e"
+    }
+  }
+}

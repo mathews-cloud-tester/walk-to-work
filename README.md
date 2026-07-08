@@ -1,39 +1,19 @@
 # Walk to Work
 
-A small full-stack app for tracking your walking commute between home and work.
+Installable phone app for tracking your walking commute between home and work.
 
-Track live GPS walks, save distance and duration, set home/work locations, and see streak stats.
+Works **offline on your device** (PWA / native). Optional FastAPI backend if you want server sync.
 
-## Features
+## What you get
 
-- **Start / finish walks** with browser geolocation
-- **To work** or **to home** direction
+- **Install on your phone** (Add to Home Screen / PWA, or Capacitor iOS/Android)
+- Start / finish GPS walks (to work or home)
 - Live distance, duration, and path sketch
 - Home & work labels / coordinates
 - History, totals, and day streak
-- JSON-backed persistence (no database required)
+- Walks saved in on-device storage by default
 
-## Stack
-
-- **Backend:** FastAPI + Pydantic
-- **Frontend:** Vue 3 + Vite
-- **Storage:** `data/commute_walks.json`
-
-## Quick start
-
-### 1. Backend
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-API docs: http://localhost:8000/docs
-
-### 2. Frontend
+## Quick start (web / PWA)
 
 ```bash
 cd frontend
@@ -41,35 +21,76 @@ npm install
 npm run dev
 ```
 
-App: http://localhost:5173
+Open http://localhost:5173
 
-Or use the helper scripts from the repo root:
+### Install on your phone
+
+1. Deploy or open the app over **HTTPS** (or use localhost on the same device).
+2. **iPhone (Safari):** Share → **Add to Home Screen**
+3. **Android (Chrome):** Menu → **Install app** / **Add to Home Screen**
+
+You’ll get a full-screen app icon with offline support.
+
+## Native iOS / Android (Capacitor)
 
 ```bash
-./start-backend.sh
-./start-frontend.sh
+cd frontend
+npm install
+npm run build
+
+# First time only:
+npx cap add android   # requires Android Studio / SDK
+npx cap add ios       # requires macOS + Xcode
+
+npm run cap:sync
+npx cap open android  # or: npx cap open ios
 ```
 
-## API
+App ID: `com.walktowork.app`
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET/PUT | `/api/commute/settings` | Home/work labels & coordinates |
-| GET | `/api/commute/stats` | Aggregate walk stats |
-| GET/POST | `/api/commute/walks` | List / start walks |
-| GET/PATCH/DELETE | `/api/commute/walks/{id}` | Read / update / delete |
-| POST | `/api/commute/walks/{id}/points` | Append GPS points |
+Location permission prompts come from `@capacitor/geolocation`.
 
-## Tests
+## Optional backend
+
+By default the UI uses **localStorage** (no server needed).
+
+To use the FastAPI API instead:
 
 ```bash
+# terminal 1
 cd backend
-source .venv/bin/activate
-pytest -v
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+
+# terminal 2
+cd frontend
+VITE_USE_API=true npm run dev
 ```
+
+## Project layout
+
+```
+walk-to-work/
+├── frontend/          # Vue 3 + Vite + PWA + Capacitor
+│   ├── public/        # manifest, icons, service worker
+│   └── src/
+├── backend/           # Optional FastAPI API
+└── data/              # Server-side walk JSON (when using API)
+```
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Vite dev server |
+| `npm run build` | Production web build |
+| `npm run cap:sync` | Build + sync into native projects |
+| `npm run cap:android` | Sync and open Android Studio |
+| `npm run cap:ios` | Sync and open Xcode |
 
 ## Notes
 
-- Geolocation requires HTTPS or `localhost` and user permission.
-- Keep the tab open while tracking; points flush to the API every few seconds.
-- Walk data is stored locally in `data/commute_walks.json` (gitignored).
+- Geolocation needs permission; keep the app open while tracking.
+- Offline-first data key: `walk-to-work:v1` in localStorage.
+- Backend tests: `cd backend && pytest -v`
