@@ -38,6 +38,11 @@ const stats = localStore.getStats()
 assert.equal(stats.total_walks, 1)
 assert.ok(stats.total_distance_meters > 0)
 
+const defaults = localStore.getSettings()
+assert.equal(defaults.home_label, '959 Lombard St')
+assert.equal(defaults.home_lat, 37.801945)
+assert.ok(String(defaults.home_address || '').includes('Lombard'))
+
 localStore.updateSettings({ home_label: 'Apt', work_label: 'Office' })
 assert.equal(localStore.getSettings().home_label, 'Apt')
 

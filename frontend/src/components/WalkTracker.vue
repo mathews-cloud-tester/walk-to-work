@@ -113,6 +113,9 @@
         {{ showSettings ? 'Hide' : 'Edit' }} home &amp; work
       </button>
       <div v-if="showSettings" class="settings-form">
+        <p v-if="settingsForm.home_address" class="home-address-hint">
+          Home: {{ settingsForm.home_address }}
+        </p>
         <div class="form-grid">
           <label>
             Home label
@@ -121,6 +124,14 @@
           <label>
             Work label
             <input v-model="settingsForm.work_label" type="text" />
+          </label>
+          <label class="full-width">
+            Home address
+            <input v-model="settingsForm.home_address" type="text" placeholder="Street address" />
+          </label>
+          <label class="full-width">
+            Work address
+            <input v-model="settingsForm.work_address" type="text" placeholder="optional" />
           </label>
           <label>
             Home lat
@@ -311,10 +322,12 @@ export default {
       pageError: null,
       showSettings: false,
       settingsForm: {
-        home_label: 'Home',
+        home_label: '959 Lombard St',
+        home_address: '959 Lombard Street, San Francisco, CA 94133',
         work_label: 'Work',
-        home_lat: null,
-        home_lng: null,
+        work_address: '',
+        home_lat: 37.801945,
+        home_lng: -122.418892,
         work_lat: null,
         work_lng: null,
         typical_distance_meters: null
@@ -898,11 +911,21 @@ export default {
   padding: 1.25rem;
 }
 
+.home-address-hint {
+  font-size: 0.9rem;
+  color: var(--text-gray);
+  margin-bottom: 0.85rem;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.85rem;
   margin-bottom: 1rem;
+}
+
+.form-grid .full-width {
+  grid-column: 1 / -1;
 }
 
 .form-grid label {

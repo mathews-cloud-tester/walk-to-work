@@ -9,10 +9,12 @@ class CommutePoint(BaseModel):
 
 
 class CommuteSettings(BaseModel):
-    home_label: str = "Home"
+    home_label: str = "959 Lombard St"
+    home_address: Optional[str] = "959 Lombard Street, San Francisco, CA 94133"
     work_label: str = "Work"
-    home_lat: Optional[float] = None
-    home_lng: Optional[float] = None
+    work_address: Optional[str] = None
+    home_lat: Optional[float] = 37.801945
+    home_lng: Optional[float] = -122.418892
     work_lat: Optional[float] = None
     work_lng: Optional[float] = None
     typical_distance_meters: Optional[float] = None

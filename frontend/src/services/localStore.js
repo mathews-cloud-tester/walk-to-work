@@ -3,6 +3,8 @@
  * Works as a standalone phone app without a backend.
  */
 
+import { defaultSettings } from '../config/places.js'
+
 const STORAGE_KEY = 'walk-to-work:v1'
 
 function utcNowIso() {
@@ -43,15 +45,7 @@ function pathDistanceMeters(points) {
 function defaultState() {
   return {
     walks: [],
-    settings: {
-      home_label: 'Home',
-      work_label: 'Work',
-      home_lat: null,
-      home_lng: null,
-      work_lat: null,
-      work_lng: null,
-      typical_distance_meters: null
-    }
+    settings: defaultSettings()
   }
 }
 
@@ -60,9 +54,18 @@ function readState() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaultState()
     const parsed = JSON.parse(raw)
+    const defaults = defaultSettings()
+    const settings = { ...defaults, ...(parsed.settings || {}) }
+    // Upgrade older installs that still have blank home coords
+    if (settings.home_lat == null && settings.home_lng == null) {
+      settings.home_label = settings.home_label === 'Home' ? defaults.home_label : settings.home_label
+      settings.home_address = settings.home_address || defaults.home_address
+      settings.home_lat = defaults.home_lat
+      settings.home_lng = defaults.home_lng
+    }
     return {
       walks: Array.isArray(parsed.walks) ? parsed.walks : [],
-      settings: { ...defaultState().settings, ...(parsed.settings || {}) }
+      settings
     }
   } catch {
     return defaultState()

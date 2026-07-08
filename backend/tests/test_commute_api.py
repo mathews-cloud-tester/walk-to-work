@@ -7,7 +7,8 @@ class TestCommuteEndpoints:
     def test_settings_get_and_put(self, client):
         res = client.get("/api/commute/settings")
         assert res.status_code == 200
-        assert res.json()["home_label"] == "Home"
+        assert res.json()["home_label"] == "959 Lombard St"
+        assert res.json()["home_lat"] == 37.801945
 
         payload = {
             "home_label": "Brooklyn Apt",
